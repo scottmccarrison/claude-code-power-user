@@ -31,7 +31,7 @@ Claude can't remember between sessions. Use CLAUDE.md to bootstrap context on ev
 0. **Identify machine**: `hostname`
 1. **Sync docs repo**: `git -C ~/docs pull --ff-only`
 2. **Search brain-mem** for prior context: `brain-mem search "<topic>" --top 5`
-3. **Load /context-load** if topic matches: `meal-planning`, `therapy`, `costa-rica`
+3. **Load /context-load** if topic matches: `meal-planning`, `project-x`, `travel-2026`
 ```
 
 This pattern is especially useful if you work across multiple machines. A marker file (e.g., `~/.claude-machine`) with a known value lets Claude branch behavior: different SSH targets, different deploy commands, different assumptions.

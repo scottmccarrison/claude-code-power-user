@@ -56,8 +56,8 @@ A plan is "agent-ready" when a Sonnet agent can execute it **without exploring o
 ## Workstream: Add Logout Button
 
 **Files to modify:**
-1. `mchome-ios/Views/Settings/SettingsView.swift` (line ~45)
-2. `mchome-ios/ViewModels/SettingsViewModel.swift`
+1. `my-ios-app/Views/Settings/SettingsView.swift` (line ~45)
+2. `my-ios-app/ViewModels/SettingsViewModel.swift`
 
 **Change in SettingsView.swift — add after line 45:**
 Button(action: { viewModel.logout() }) {
