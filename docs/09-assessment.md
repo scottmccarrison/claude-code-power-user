@@ -29,11 +29,13 @@ This setup is solidly in the **Power User** tier, reaching into Maximalist on so
 
 5. **Hook-based branch protection** — PreToolUse blocking main commits with repo-specific exemptions. Deterministic safety that CLAUDE.md alone can't guarantee.
 
+6. **PermissionRequest auto-approval** - Regex-based command classification replaces ~370 individual allowlist entries with ~20 rules. Safe commands auto-approve instantly; dangerous commands still prompt. The allowlist dropped from a mess of shell fragments and leaked credentials to ~100 clean entries.
+
 ## Where The Ceiling Is Higher
 
 ### Things the community's most advanced setups have that this doesn't
 
-1. **More hook events covered** — This setup uses 5 of ~14 available events. `UserPromptSubmit` was tested as a prompt-type quality gate and removed (too aggressive, unpredictable LLM evaluation, latency on every message). `SubagentStart/Stop` deferred pending richer hook data from Anthropic. `PreCompact` deferred (can't inject context, contrary to initial assumption). The remaining gap is real but narrower than it appears - several "missing" hooks were evaluated and deliberately skipped.
+1. **More hook events covered** — This setup uses 9 of ~14 available events. `PermissionRequest` auto-approval, `PostToolUseFailure` logging, `Notification` desktop alerts, and `TaskCompleted` logging are all now implemented. `UserPromptSubmit` was tested as a prompt-type quality gate and removed (too aggressive, unpredictable LLM evaluation, latency on every message). `SubagentStart/Stop` deferred pending richer hook data from Anthropic. `PreCompact` deferred (can't inject context, contrary to initial assumption). The remaining gap is real but narrower than it appears - several "missing" hooks were evaluated and deliberately skipped.
 
 2. **Agent security auditing** — The "AgentShield" pattern: adversarial review of agent output using separate Opus agents that try to find flaws. This setup verifies with Haiku (checks for correctness), but doesn't do adversarial review (checks for subtle bugs or security issues).
 

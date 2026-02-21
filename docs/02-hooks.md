@@ -45,7 +45,7 @@ If something must happen with zero exceptions, it belongs in a hook, not a markd
 
 ---
 
-## The Five Essential Hooks
+## The Nine Essential Hooks
 
 ### 1. SessionStart: Context Injection
 
@@ -266,7 +266,170 @@ What it does:
 3. Saves summary to memory API with session-level tags
 4. Caps output at ~4000 chars to stay within embedding limits
 
-The archive step is critical. Claude Code's transcript files are ephemeral — they disappear when the session is cleaned up. If you want to audit what happened in a session two weeks ago, or train on your own usage patterns, you need to archive before the files are gone.
+The archive step is critical. Claude Code's transcript files are ephemeral - they disappear when the session is cleaned up. If you want to audit what happened in a session two weeks ago, or train on your own usage patterns, you need to archive before the files are gone.
+
+---
+
+### 6. PermissionRequest: Auto-Approve Safe Commands
+
+The settings.local.json allowlist is a blunt instrument. Every new command pattern adds another line, fragments accumulate (shell loops, YAML lines, heredoc artifacts), and credentials leak into the allowlist through session-by-session approvals.
+
+A PermissionRequest hook replaces hundreds of individual allowlist entries with ~20 regex rules. Safe commands (git, ls, cat, grep, python, ssh, curl, etc.) get auto-approved. Dangerous commands (rm, kill, sudo apt install) fall through to the normal permission dialog.
+
+```python
+#!/usr/bin/env python3
+# ~/.claude/hooks/auto-approve-commands.py
+# PermissionRequest hook: auto-approve safe Bash commands
+
+import json, sys, re
+
+def get_base_command(cmd):
+    """Strip env vars and path prefixes to get the base command."""
+    cmd = re.sub(r'^(\w+=\S+\s+)+', '', cmd.strip())
+    first = cmd.split()[0] if cmd.split() else ''
+    return first.rsplit('/', 1)[-1] if '/' in first else first
+
+SAFE_PATTERNS = [
+    r'^(git|gh)\s',                    # Git/GitHub CLI
+    r'^(python3?|pip3?)\b',            # Python ecosystem
+    r'/(venv|\.venv)/bin/',            # Virtual environments
+    r'^(ls|cat|grep|find|head|tail|echo|printf|tree|wc|stat|du)\b',  # Read-only FS
+    r'^(ssh|scp|ping|tailscale)\b',    # Remote access
+    r'^(curl|wget)\b',                 # HTTP tools
+    r'^(node|npm|npx)\b',             # Node.js
+    r'^(tar|unzip|7z|zstd)\b',        # Archives
+    # ... plus system info, package queries, ImageMagick, etc.
+]
+
+try:
+    data = json.load(sys.stdin)
+    if data.get('tool_name') != 'Bash':
+        sys.exit(0)
+
+    command = data.get('tool_input', {}).get('command', '')
+    base_cmd = get_base_command(command)
+
+    for pattern in SAFE_PATTERNS:
+        if re.search(pattern, command) or re.search(pattern, base_cmd):
+            json.dump({"decision": "allow"}, sys.stdout)
+            sys.exit(0)
+except Exception:
+    pass
+
+sys.exit(0)  # No output = fall through to normal permission dialog
+```
+
+The key design decisions:
+
+- **Output `{"decision":"allow"}` to approve, no output to fall through.** Exit 0 with no stdout means "I have no opinion" - the normal permission dialog appears.
+- **Strip env var prefixes before matching.** Commands like `HSA_OVERRIDE_GFX_VERSION=11.0.0 ollama run` need to match against `ollama`, not the env var.
+- **Strip path prefixes.** `/home/scott/brain/venv/bin/python` should match the `python` rule.
+- **Explicit exclusions aren't needed.** If a command doesn't match any safe pattern, it falls through automatically. No need to maintain a deny list.
+
+After deploying this hook, the settings.local.json allowlist dropped from ~470 entries to ~100 - mostly WebFetch domains and sudo commands that deliberately require manual approval.
+
+---
+
+### 7. PostToolUseFailure: Failure Logging
+
+When tools fail, the error scrolls past in the session and is gone. This hook captures every failure to a JSONL log for post-session analysis.
+
+```python
+#!/usr/bin/env python3
+# ~/.claude/hooks/log-failures.py
+# PostToolUseFailure hook: log tool failures to JSONL
+
+import json, sys, os
+from datetime import datetime, timezone
+
+try:
+    data = json.load(sys.stdin)
+    if data.get('is_interrupt'):
+        sys.exit(0)
+
+    entry = {
+        'ts': datetime.now(timezone.utc).isoformat(),
+        'session_id': data.get('session_id', ''),
+        'tool': data.get('tool_name', ''),
+        'error': str(data.get('error', ''))[:500],
+        'cwd': data.get('cwd', ''),
+    }
+
+    if entry['tool'] == 'Bash':
+        entry['command'] = data.get('tool_input', {}).get('command', '')[:200]
+
+    log_path = os.path.expanduser('~/.claude/logs/failures.log')
+    os.makedirs(os.path.dirname(log_path), exist_ok=True)
+    with open(log_path, 'a') as f:
+        f.write(json.dumps(entry) + '\n')
+except Exception:
+    pass
+
+sys.exit(0)
+```
+
+Design notes:
+- **Skip interrupts** (`is_interrupt: true`) - user-cancelled operations aren't failures worth logging.
+- **Truncate errors to 500 chars** - stack traces can be enormous; the first 500 chars usually contain the actual error.
+- **JSONL format** - one JSON object per line, trivially parseable with `jq` or Python.
+- **Silent fail** - if the log file can't be written, exit 0 and move on. Never block Claude over a logging failure.
+
+---
+
+### 8. Notification: Desktop Alerts for Permission Prompts
+
+When Claude needs permission approval, it waits silently. If you're in another window, you won't notice until you switch back. This hook sends a desktop notification so you know to check back.
+
+```bash
+#!/bin/bash
+# ~/.claude/hooks/notify-permission.sh
+# Notification hook: desktop alert when Claude needs permission
+
+if ! command -v notify-send &>/dev/null; then
+    exit 0
+fi
+
+notify-send -u normal -t 10000 "Claude Code" "Permission approval needed" 2>/dev/null
+exit 0
+```
+
+Minimal by design. The matcher is `permission_prompt` so it only fires on permission requests, not on every notification type. Falls back silently if `notify-send` isn't available (macOS, headless servers).
+
+---
+
+### 9. TaskCompleted: Task Completion Logging
+
+Tracks when Claude completes tasks - useful for understanding session productivity patterns and how long complex tasks actually take.
+
+```python
+#!/usr/bin/env python3
+# ~/.claude/hooks/log-task-completed.py
+# TaskCompleted hook: log completed tasks to JSONL
+
+import json, sys, os
+from datetime import datetime, timezone
+
+try:
+    data = json.load(sys.stdin)
+    entry = {
+        'ts': datetime.now(timezone.utc).isoformat(),
+        'session_id': data.get('session_id', ''),
+        'task_id': data.get('task_id', ''),
+        'subject': data.get('task_subject', '') or data.get('subject', ''),
+        'cwd': data.get('cwd', ''),
+    }
+
+    log_path = os.path.expanduser('~/.claude/logs/tasks.log')
+    os.makedirs(os.path.dirname(log_path), exist_ok=True)
+    with open(log_path, 'a') as f:
+        f.write(json.dumps(entry) + '\n')
+except Exception:
+    pass
+
+sys.exit(0)
+```
+
+Same pattern as the failure logger - JSONL, silent fail, minimal fields. Cross-reference with the failure log to see which tasks had rough executions.
 
 ---
 
@@ -326,6 +489,50 @@ The archive step is critical. Claude Code's transcript files are ephemeral — t
           {
             "type": "command",
             "command": "~/.claude/hooks/archive-session.sh"
+          }
+        ]
+      }
+    ],
+    "PermissionRequest": [
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "~/.claude/hooks/auto-approve-commands.py"
+          }
+        ]
+      }
+    ],
+    "PostToolUseFailure": [
+      {
+        "matcher": "",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "~/.claude/hooks/log-failures.py"
+          }
+        ]
+      }
+    ],
+    "Notification": [
+      {
+        "matcher": "permission_prompt",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "~/.claude/hooks/notify-permission.sh"
+          }
+        ]
+      }
+    ],
+    "TaskCompleted": [
+      {
+        "matcher": "",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "~/.claude/hooks/log-task-completed.py"
           }
         ]
       }
@@ -400,9 +607,5 @@ What you can get (agent type, last message, transcript path) is useful for audit
 ### PreCompact - Deferred
 
 PreCompact **cannot inject context** - no `additionalContext` output field, can't block compaction. The correct pattern is a SessionStart hook with `matcher: "compact"` to re-inject context *after* compaction. Two-hook solution, medium effort, not the quick win it appears to be.
-
-### PermissionRequest
-
-Could auto-approve a whitelist of known-safe operations and auto-deny a blacklist of known-dangerous ones. Currently everything goes through Claude's judgment plus the interactive prompt.
 
 The gap between this setup and full coverage of all events is real, but the gaps are now informed by testing rather than speculation. Some hooks aren't worth the tradeoffs today.
