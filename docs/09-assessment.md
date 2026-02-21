@@ -51,20 +51,40 @@ This setup is solidly in the **Power User** tier, reaching into Maximalist on so
 
 A critical nuance: the community's most impressive setups (the "awesome-claude-code" collections with 49K+ stars) are primarily **showcase repos** — collections of demos, examples, and composable components. They demonstrate what's possible.
 
-This setup is a **daily driver** — it shipped 8 major app releases (v1.4 through v2.0), deployed backend services, managed multi-machine infrastructure, and accumulated 1000+ memories over months of real use. Every hook, skill, and pattern exists because it solved a real problem, not because it makes a good demo.
+This setup is a **daily driver** — used daily across multiple domains and project types:
 
-Both have value. But if someone asks "what does a Claude Code setup look like that actually ships software every week," this is closer to that answer than a showcase repo.
+- **Mobile app development** — iOS app through 8+ major releases, full offline-first architecture
+- **Backend API services** — Python/FastAPI with PostgreSQL, deployed and maintained on cloud infrastructure
+- **Data engineering** — Pipeline development, SQL transformations, SDK connectors
+- **Data science** — Weather modeling, multi-source data fusion, geospatial analysis
+- **Creative tooling** — Image and video generation workflows
+- **Infrastructure automation** — Multi-machine provisioning, deployment, monitoring
+
+Over 1,100 searchable memories accumulated across months of real use on 3 machines. Every hook, skill, and pattern exists because it solved a real problem across these different domains, not because it makes a good demo.
+
+Both have value. But if someone asks "what does a Claude Code setup look like when it's your primary development environment across everything you build," this is closer to that answer than a showcase repo.
 
 ## What I'd Add Next
+
+### Tier 1 — Originally "High Impact, Low Effort" — DEFERRED
+
+After detailed research, all three Tier 1 items had risks that outweighed their daily benefits:
+
+1. **`@import` syntax in CLAUDE.md** — DEFERRED. Home-directory `@~/...` imports unreliable (GitHub #8765, closed "not planned"). Global CLAUDE.md imports flaky (#1041). Silent failure when imports don't resolve. The current "see X" pattern where Claude reads files when relevant is more reliable today.
+
+2. **PreCompact hook** — DEFERRED (misstated). PreCompact **cannot inject context** — no `additionalContext` output field, can't block compaction. The correct pattern is a SessionStart hook with `matcher: "compact"` to re-inject context *after* compaction. Two-hook pattern, medium effort, not the quick win originally pitched.
+
+3. **CLAUDE_ENV_FILE in SessionStart** — DEFERRED. Hooks already derive what they need via JSON parsing (1-2 lines each). Replaces working boilerplate with slightly cleaner boilerplate. Code quality improvement, not capability improvement.
+
+### Tier 2 — Active Candidates
 
 In rough priority order:
 
 1. **Cost tracking** — Parse archived JSONL transcripts for per-session token breakdown
-2. **PreCompact hook** — Force-preserve critical context before compaction
-3. **UserPromptSubmit hook** — Flag vague prompts that need more specificity
+2. **UserPromptSubmit hook** — Flag vague prompts that need more specificity
+3. **SubagentStart/Stop hooks** — Track agent success rates and token usage
 4. **Headless CI integration** — Claude Code in PR review pipelines
-5. **SubagentStart/Stop hooks** — Track agent success rates and token usage
-6. **chezmoi migration** — Encrypted secret management for the docs repo
+5. **chezmoi migration** — Encrypted secret management for the docs repo
 
 ## The Bottom Line
 

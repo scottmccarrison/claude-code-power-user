@@ -2,7 +2,7 @@
 
 A comprehensive guide to maximizing Claude Code — hooks, memory, sub-agents, portable config, and multi-tier agent workflows.
 
-**This isn't a theoretical framework.** Every pattern here was built and refined while shipping real software (an iOS app + Python backend through 8 major releases). Patterns that didn't survive contact with reality were cut.
+**This isn't a theoretical framework.** Every pattern here was built and refined across months of daily, heavy usage spanning multiple domains: mobile app development, backend API services, data engineering pipelines, image/video generation tools, data science projects, and infrastructure automation. The setup has shipped 8+ major releases across multiple repos, accumulated 1,100+ searchable memories, and runs across 3 machines. Patterns that didn't survive contact with reality were cut.
 
 ## Who This Is For
 
