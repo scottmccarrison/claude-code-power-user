@@ -73,3 +73,20 @@ Is this the most advanced Claude Code setup that exists? No. The gap is real —
 Is this in the top tier of setups that people actually use daily to ship real software? Yes. The combination of external memory, tiered agent orchestration, portable multi-machine config, and domain-specific skills is unusual in the wild.
 
 The honest assessment: **power user, not maximalist**. The remaining distance to maximalist is shorter than the distance already covered from default.
+
+## Further Reading
+
+Community repos and resources worth exploring:
+
+- [everything-claude-code](https://github.com/affaan-m/everything-claude-code) — Hackathon winner, 13 agents, 43 skills, AgentShield pattern
+- [awesome-claude-code](https://github.com/hesreallyhim/awesome-claude-code) — Curated index of skills, hooks, agents, status lines
+- [awesome-claude-code-toolkit](https://github.com/rohitg00/awesome-claude-code-toolkit) — 135 agents, 120 plugins, 19 hooks
+- [claude-code-ultimate-guide](https://github.com/FlorianBruniaux/claude-code-ultimate-guide) — Beginner-to-power-user docs
+- [claude-md-templates](https://github.com/abhishekray07/claude-md-templates) — CLAUDE.md examples
+- [claude-mem](https://github.com/thedotmack/claude-mem) — Plugin for persistent memory compression
+- [claude-flow](https://github.com/ruvnet/claude-flow) — Swarm orchestration platform
+- [ccusage](https://ccusage.com/) — Token usage analytics from local JSONL files
+- [parallel-worktrees skill](https://github.com/spillwavesolutions/parallel-worktrees) — Dedicated worktree lifecycle management
+- [YK's 45 Claude Code Tips](https://github.com/ykdojo/claude-code-tips)
+- [GitButler's Hooks Guide](https://blog.gitbutler.com/automate-your-ai-workflows-with-claude-code-hooks/)
+- [Chezmoi + Age sync guide](https://www.arun.blog/sync-claude-code-with-chezmoi-and-age/) — Encrypted multi-machine config
