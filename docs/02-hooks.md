@@ -366,16 +366,43 @@ echo "Exit: $?"
 
 ---
 
-## What I Haven't Hooked Yet
+## What I Haven't Hooked Yet (And What I Tried)
 
-These events exist but aren't wired up in this setup:
+These events exist but aren't wired up in this setup. Some were tested and deliberately removed.
 
-**UserPromptSubmit** — Could intercept and reject vague prompts ("make it better") before they waste a round-trip. Could enforce that certain project types always include a ticket number. The challenge: you don't want to interrupt normal prompting with noise.
+### UserPromptSubmit - Tested, Removed
 
-**SubagentStart / SubagentStop** — Could log agent spawn/completion metrics, inject subagent-specific context based on what task was delegated, or build an audit trail of multi-agent sessions. Useful once you're running parallel agents regularly.
+I built a prompt-type hook that evaluated whether each user message was specific enough to act on. The prompt had an auto-approve list (short confirmations, slash commands, follow-ups, pasted code), a strict rejection criteria (only reject when the prompt was vague on multiple dimensions), and an explicit "when in doubt, APPROVE" bias.
 
-**PreCompact** — Fires before context compaction. Could force Claude to write a structured handoff note before the compact happens. Currently the compaction summary is whatever Claude decides to include, which is inconsistent.
+**What happened:** The hook blocked most legitimate prompts, including prompts trying to fix the hook itself. A catch-22 - the quality gate rejected the very messages needed to adjust its sensitivity. Even with careful prompt engineering and a permissive bias, the LLM evaluation was too unpredictable for a gate that fires on every single interaction.
 
-**PermissionRequest** — Could auto-approve a whitelist of known-safe operations and auto-deny a blacklist of known-dangerous ones. Currently everything goes through Claude's judgment plus the interactive prompt.
+**The core problems:**
 
-The gap between this setup and full coverage of all 14 events is real. Each of the above represents a class of problems that hooks could solve deterministically but currently relies on model behavior.
+- **Prompt-type hooks add 700ms-2s per interaction.** Every message - including "yes", "looks good", "continue" - pays the latency tax of a Haiku LLM call. That's noticeable.
+- **No prompt rewriting.** You can block or augment context, but you can't fix a vague prompt. The user has to retype from scratch.
+- **Claude doesn't see the rejection reason.** Exit code 2 erases the prompt entirely. Stderr goes to the user but not to Claude. So Claude can't help improve the prompt.
+- **No matcher filtering.** The hook fires on everything with no way to skip trivial prompts. Your filtering logic has to live inside the script.
+- **The real problem is fuzzy.** Regex catches obviously bad prompts ("fix it", "make it work"), but the prompts that actually waste Opus turns are subtly vague, not obviously vague. That's where you need LLM judgment, and that's where the latency tax hits.
+
+**Verdict:** If you want a prompt quality gate, use a command hook with simple regex patterns - fast, deterministic, easy to debug. Skip the LLM evaluation. The prompts that regex catches aren't the ones costing you money, and the ones costing you money need LLM judgment that adds unacceptable latency.
+
+### SubagentStart / SubagentStop - Deferred
+
+Could log agent spawn/completion metrics, inject subagent-specific context, or build an audit trail. The data available today is incomplete:
+
+- **SubagentStop** doesn't include token usage, cost, or duration. You'd have to parse the agent's transcript file to derive these.
+- **Neither hook** tells you if the agent is running Haiku, Sonnet, or Opus. You'd have to parse transcript content or infer from agent type.
+- **SubagentStart can't block.** Exit code 2 only shows stderr to the user. The agent launches anyway.
+- **No parent agent ID.** If agents spawn sub-agents, you can't build a hierarchy tree from hook data alone.
+
+What you can get (agent type, last message, transcript path) is useful for audit logging but not for the calibration metrics you actually want. Deferred until Anthropic adds token/cost/model fields to SubagentStop.
+
+### PreCompact - Deferred
+
+PreCompact **cannot inject context** - no `additionalContext` output field, can't block compaction. The correct pattern is a SessionStart hook with `matcher: "compact"` to re-inject context *after* compaction. Two-hook solution, medium effort, not the quick win it appears to be.
+
+### PermissionRequest
+
+Could auto-approve a whitelist of known-safe operations and auto-deny a blacklist of known-dangerous ones. Currently everything goes through Claude's judgment plus the interactive prompt.
+
+The gap between this setup and full coverage of all events is real, but the gaps are now informed by testing rather than speculation. Some hooks aren't worth the tradeoffs today.
