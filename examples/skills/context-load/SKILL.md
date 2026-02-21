@@ -14,8 +14,8 @@ Load the context matching: **$ARGUMENTS**
 | Context | Reference |
 |---------|-----------|
 | meal-planning | `references/meal-planning.md` |
-| mcdev | `references/mcdev.md` |
-| therapy | `references/therapy.md` |
+| dev-guide | `references/dev-guide.md` |
+| project-x | `references/project-x.md` |
 
 ## Instructions
 

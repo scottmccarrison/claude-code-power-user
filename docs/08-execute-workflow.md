@@ -22,10 +22,10 @@ Before writing any plan, identify what you need to know and send Haiku agents to
 Agent 1: "Read /home/scott/brain/app/routes/meals.py and report its
           current route definitions and patterns"
 
-Agent 2: "Check git state of mchome-ios repo: current branch, dirty
+Agent 2: "Check git state of my-ios-app repo: current branch, dirty
           files, open PRs"
 
-Agent 3: "Read the Plant model in mchome-ios and report its properties
+Agent 3: "Read the Plant model in my-ios-app and report its properties
           and SwiftData cache structure"
 
 Agent 4: "List all tests in brain/tests/ that touch the plants module"
@@ -63,7 +63,7 @@ On approval:
 ```bash
 git worktree add --detach ../brain-ws1 main
 git worktree add --detach ../brain-ws2 main
-git worktree add --detach ../mchome-ios-ws1 main
+git worktree add --detach ../my-ios-app-ws1 main
 ```
 
 ### 2. Create the integration branch
@@ -82,7 +82,7 @@ Each agent gets:
 ```
 Agent A (Sonnet, ../brain-ws1):     Backend CRUD endpoints
 Agent B (Sonnet, ../brain-ws2):     Backend tests
-Agent C (Sonnet, ../mchome-ios-ws1): iOS model + API service + ViewModel
+Agent C (Sonnet, ../my-ios-app-ws1): iOS model + API service + ViewModel
 ```
 
 Critical rules:
@@ -102,7 +102,7 @@ Verify Agent 1: "Read the diff on branch feature/plant-endpoints
 Verify Agent 2: "Run pytest in ../brain-ws1 and report pass/fail
                  with any error output."
 
-Verify Agent 3: "Check if PlantView.swift in ../mchome-ios-ws1
+Verify Agent 3: "Check if PlantView.swift in ../my-ios-app-ws1
                  contains the watering history list and quick-water
                  buttons."
 ```
@@ -146,7 +146,7 @@ Standard CRUD following existing patterns? Auto-merge. Auth changes or schema mi
 ```bash
 git worktree remove ../brain-ws1
 git worktree remove ../brain-ws2
-git worktree remove ../mchome-ios-ws1
+git worktree remove ../my-ios-app-ws1
 ```
 
 ### 6. User validation tests

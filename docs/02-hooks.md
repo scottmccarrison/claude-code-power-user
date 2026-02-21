@@ -231,7 +231,7 @@ try:
 
     # Extract topics
     topics = re.findall(r'[\w-]+\.py|[\w-]+\.swift|[\w-]+\.ts', combined)
-    topics += re.findall(r'brain|mchome-ios|comfy-prompt', combined, re.I)
+    topics += re.findall(r'my-backend|my-ios-app|my-web-app', combined, re.I)
 
     payload = {
         'title': f"{action_type}: {user_msg[:80]}",
@@ -241,7 +241,7 @@ try:
     }
 
     requests.post(
-        'http://100.105.131.123/api/memory',
+        'http://your-memory-api.example.com/api/memory',
         json=payload,
         timeout=5,
         headers={'Authorization': f"Bearer {os.environ.get('BRAIN_API_KEY', '')}"}

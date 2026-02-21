@@ -22,8 +22,8 @@ Skills live in `~/.claude/skills/` (user-level) or `.claude/skills/` (project-le
 │   ├── SKILL.md
 │   └── references/
 │       ├── meal-planning.md
-│       ├── mcdev.md
-│       └── therapy.md
+│       ├── dev-guide.md
+│       └── project-x.md
 ├── recall/
 │   └── SKILL.md
 ├── remember/
@@ -77,8 +77,8 @@ Load domain-specific context on demand instead of bloating every session:
 
 ```
 /context-load meal-planning
-/context-load mcdev
-/context-load dnd-campaign1
+/context-load dev-guide
+/context-load project-alpha
 ```
 
 SKILL.md is a simple router:
@@ -91,8 +91,8 @@ Load the context matching: **$ARGUMENTS**
 | Context | Reference |
 |---------|-----------|
 | meal-planning | `references/meal-planning.md` |
-| mcdev | `references/mcdev.md` |
-| therapy | `references/therapy.md` |
+| dev-guide | `references/dev-guide.md` |
+| project-x | `references/project-x.md` |
 
 ## Instructions
 1. Match $ARGUMENTS to a context name (case-insensitive)

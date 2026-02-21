@@ -20,13 +20,13 @@ Use it for: infrastructure tables, project indexes, version history, quick-refer
 ## Infrastructure Quick Reference
 | System | Access | Deploy |
 |--------|--------|--------|
-| **Brain API EC2** | Tailscale `brain-api-1` | `ssh ... && git pull && systemctl restart` |
-| **Dev EC2** | `dev.mccarrison.me` | N/A |
+| **API Server** | Tailscale `api-server-1` | `ssh ... && git pull && systemctl restart` |
+| **Dev Server** | `dev.example.com` | N/A |
 
 ## Projects
 | Repo | Stack | Notes |
 |------|-------|-------|
-| **mchome-ios** | Swift, Xcode Cloud | iOS app |
+| **my-ios-app** | Swift, Xcode Cloud | iOS app |
 | **brain** | Python/FastAPI + PostgreSQL | Backend API |
 
 ## v1.9 — Plants (Complete, 2026-02-16)
